@@ -1,0 +1,10 @@
+.build/
+dist/
+.DS_Store
+*.dmg
+*.zip
+ChatLedger.library.json
+Attachments/
+*.backup.json
+.env
+.env.*
