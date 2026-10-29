@@ -6,7 +6,9 @@ swift build -c release --cache-path .build/cache --config-path .build/config --s
 APP="${CHATLEDGER_APP_OUTPUT:-$PWD/dist/轻随.app}"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp .build/release/ChatLedger "$APP/Contents/MacOS/ChatLedger"
-cp Assets/FloatingOrb.png "$APP/Contents/Resources/FloatingOrb.png"
+for artwork in Assets/FloatingOrb*.png; do
+  install -m 644 "$artwork" "$APP/Contents/Resources/"
+done
 xcrun swift scripts/MakeIcon.swift .build/AppIcon.iconset "$APP/Contents/Resources/AppIcon.icns"
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -18,8 +20,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>CFBundleDisplayName</key><string>轻随</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.7.0</string>
-<key>CFBundleVersion</key><string>20</string>
+<key>CFBundleShortVersionString</key><string>0.7.2</string>
+<key>CFBundleVersion</key><string>22</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>NSHighResolutionCapable</key><true/>
 <key>NSPrincipalClass</key><string>NSApplication</string>

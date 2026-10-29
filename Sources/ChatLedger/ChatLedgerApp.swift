@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct ChatLedgerApp: App {
     @StateObject private var shortcuts = KeyboardShortcuts.shared
+    @StateObject private var copyFeedback = CopyFeedback.shared
     @StateObject private var store = LedgerStore()
     @StateObject private var floating = FloatingTodo()
 
@@ -12,6 +13,7 @@ struct ChatLedgerApp: App {
                 .frame(minWidth: 240, minHeight: 320)
                 .onAppear {
                     floating.restore(store: store)
+                    copyFeedback.start()
                     if let url = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"), let icon = NSImage(contentsOf: url) {
                         NSApp.applicationIconImage = icon
                     }
@@ -47,7 +49,7 @@ struct ChatLedgerApp: App {
                 Button("关于轻随") {
                     let alert = NSAlert()
                     alert.messageText = "轻随 · 把内容和事情放在一起"
-                    alert.informativeText = "本地聊天记录、待办与日历。\n\n版本 0.7.0\n\n完整操作请点击窗口右上角“使用说明”，或在 Help 菜单打开。备份时复制整个资料库文件夹即可。"
+                    alert.informativeText = "本地聊天记录、待办与日历。\n\n版本 0.7.2\n\n完整操作请点击窗口右上角“使用说明”，或在 Help 菜单打开。备份时复制整个资料库文件夹即可。"
                     alert.runModal()
                 }
             }

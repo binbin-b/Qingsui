@@ -56,11 +56,9 @@ enum WindowMode {
         apply(window)
     }
     static func apply(_ window: NSWindow) {
-        let compact = window.frame.width < 420
-        let level: NSWindow.Level = compact ? .floating : .normal
-        let behavior: NSWindow.CollectionBehavior = compact ? [.canJoinAllSpaces, .fullScreenAuxiliary] : [.managed]
-        if window.level != level { window.level = level }
-        if window.collectionBehavior != behavior { window.collectionBehavior = behavior }
+        // The main chat window always follows normal macOS stacking, including in rail mode.
+        if window.level != .normal { window.level = .normal }
+        if window.collectionBehavior != [.managed] { window.collectionBehavior = [.managed] }
     }
 }
 struct WindowModeObserver: NSViewRepresentable {

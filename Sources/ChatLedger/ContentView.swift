@@ -270,6 +270,15 @@ struct ContentView: View {
                 }.font(.caption).foregroundStyle(Palette.accent).padding(.horizontal, 8).ledgerGlass(radius: 10)
                     .accessibilityElement(children: .contain)
             }
+            if let task = store.activeTaskCollection {
+                HStack(spacing: 8) {
+                    Label(task.title, systemImage: "checklist").lineLimit(1)
+                    Spacer(minLength: 4)
+                    Button { store.filter = .all } label: { Label("退出待办", systemImage: "xmark") }
+                        .buttonStyle(.plain).padding(.vertical, 5).padding(.horizontal, 7)
+                }.font(.caption).foregroundStyle(Palette.accent).padding(.horizontal, 8).ledgerGlass(radius: 10)
+                    .accessibilityElement(children: .contain)
+            }
             if tagEditing || tagToken != nil { tagPicker }
             if !selectedTags.isEmpty {
                 ScrollView(.horizontal) {
@@ -434,7 +443,7 @@ struct ContentView: View {
         var taskID = selectedTaskID
         var title = newTaskTitle
         if let mention, !mention.query.isEmpty { title = mention.query; taskID = nil; body.removeSubrange(mention.range) }
-        guard store.send(text: body, taskID: taskID, newTaskTitle: title, drafts: drafts, dueDate: dueDate, tags: store.tagsForCurrentCollection(selectedTags)) else { return }
+        guard store.sendFromMainComposer(text: body, taskID: taskID, newTaskTitle: title, drafts: drafts, dueDate: dueDate, tags: selectedTags) else { return }
         switch store.filter {
         case .deleted: store.filter = .all
         case .tag(let tag) where !(store.library.messages.last?.tags ?? []).contains(tag): store.filter = .all
@@ -491,7 +500,8 @@ struct MessageBubble: View, Equatable {
                             Text("@ " + task.title)
                             if let due = task.dueDate, message.scheduledDate == nil { Text(due, format: .dateTime.month().day()).font(.system(size: 10)) }
                         }.font(.system(size: 11, weight: .medium)).foregroundStyle(message.isProcessed ? .gray : Palette.accent)
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(.plain).help("进入待办合集，之后发送的消息自动关联此待办")
+                        .accessibilityLabel("进入待办合集：" + task.title)
                 }
                 if message.retractedAt != nil {
                     HStack { Text("消息已撤回").foregroundStyle(.secondary); Button("重新编辑") { store.editingMessage = message } }.font(.caption)
@@ -508,7 +518,7 @@ struct MessageBubble: View, Equatable {
                     Label(message.scheduledDate!.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar").font(.caption).foregroundStyle(Palette.accent)
                 }
                 if message.isActive, let tags = message.tags, !tags.isEmpty {
-                    HStack { ForEach(tags, id: \.self) { tag in Button("#" + tag) { store.filter = .tag(tag) }.buttonStyle(.plain) } }.font(.caption).foregroundStyle(Palette.accent)
+                    HStack { ForEach(tags, id: \.self) { tag in Button("#" + tag) { store.filter = .tag(tag) }.buttonStyle(.plain).help("进入标签合集，之后发送的消息自动带上此标签").accessibilityLabel("进入标签合集：" + tag) } }.font(.caption).foregroundStyle(Palette.accent)
                 }
                 let images = message.isActive ? message.attachments.filter(\.isImage) : []
                 if !images.isEmpty { ImageStack(attachments: images).saturation(message.isProcessed ? 0.1 : 1).opacity(message.isProcessed ? 0.6 : 1) }

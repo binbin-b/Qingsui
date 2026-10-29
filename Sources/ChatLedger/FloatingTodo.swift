@@ -189,19 +189,9 @@ struct FloatingTodoView: View {
 }
 
 struct GlassOrb: View {
-    private static let artwork: NSImage? = Bundle.main.url(forResource: "FloatingOrb", withExtension: "png").flatMap { NSImage(contentsOf: $0) }
+    @AppStorage("floatingOrbStyle") private var style = OrbStyle.logo
     var body: some View {
-        Group {
-            if let artwork = Self.artwork {
-                Image(nsImage: artwork).resizable().interpolation(.high)
-                    .frame(width: 81, height: 81).offset(x: 0.06, y: 2.07)
-                    .frame(width: 60, height: 60).clipShape(Circle())
-            } else {
-                Circle().fill(Color.mint.opacity(0.6))
-                    .overlay(Circle().stroke(.white, lineWidth: 1.3).frame(width: 13, height: 13))
-                    .frame(width: 60, height: 60)
-            }
-        }.frame(width: 68, height: 68).accessibilityHidden(true)
+        OrbArtwork(style: style).frame(width: 68, height: 68).accessibilityHidden(true)
     }
 }
 
@@ -234,7 +224,7 @@ final class FloatingHostingView: NSHostingView<AnyView> {
         isCollapsed?() == true ? .button : super.accessibilityRole()
     }
     override func accessibilityLabel() -> String? {
-        isCollapsed?() == true ? "青绿色悬浮球，单击或停留展开待办，按住可拖动" : super.accessibilityLabel()
+        isCollapsed?() == true ? "悬浮球，单击或停留展开待办，按住可拖动" : super.accessibilityLabel()
     }
     override func isAccessibilityElement() -> Bool {
         isCollapsed?() == true || super.isAccessibilityElement()

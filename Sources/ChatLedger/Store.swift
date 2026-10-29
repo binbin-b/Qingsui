@@ -121,6 +121,20 @@ final class LedgerStore: ObservableObject {
         try encoder.encode(candidate).write(to: directory.appendingPathComponent(Self.manifestName), options: .atomic)
     }
 
+    var activeTaskCollection: LedgerTask? {
+        guard case .task(let id) = filter else { return nil }
+        return library.tasks.first { $0.id == id }
+    }
+    // Only the main composer inherits the current collection. Floating notes remain independent.
+    @discardableResult
+    func sendFromMainComposer(text: String, taskID: UUID?, newTaskTitle: String?, drafts: [DraftAttachment], dueDate: Date? = nil, tags: [String] = []) -> Bool {
+        let hasExplicitTitle = !(newTaskTitle?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        let inherited = taskID == nil && !hasExplicitTitle ? activeTaskCollection?.id : nil
+        // Merely entering a collection must not make an empty Enter create an empty bubble.
+        if inherited != nil && TagMention.extract(text).body.isEmpty && drafts.isEmpty { return false }
+        return send(text: text, taskID: taskID ?? inherited, newTaskTitle: newTaskTitle, drafts: drafts, dueDate: dueDate, tags: tagsForCurrentCollection(tags))
+    }
+
     @discardableResult
     func send(text: String, taskID: UUID?, newTaskTitle: String?, drafts: [DraftAttachment], dueDate: Date? = nil, tags: [String] = []) -> Bool {
         guard let folder else { errorMessage = LedgerError.noFolder.localizedDescription; return false }

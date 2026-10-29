@@ -34,7 +34,8 @@ struct CoreTests {
             ("新标签输入、显式标签和隐藏筛选", tagInputAndVisibility),
             ("完整备份恢复、导出附件及源数据保护", archives),
             ("长消息折叠与搜索范围", presentationAndSearch),
-            ("批量日期标签、迁移与独立记事", bulkMetadataAndNote)
+            ("批量日期标签、迁移与独立记事", bulkMetadataAndNote),
+            ("待办合集继承、退出与悬浮记事隔离", taskCollection)
         ]
         var failures = 0
         for (name, test) in cases {
@@ -43,6 +44,34 @@ struct CoreTests {
         }
         print("\(cases.count - failures)/\(cases.count) tests passed")
         if failures > 0 { exit(1) }
+    }
+
+    static func taskCollection() throws {
+        try withStore { store, folder in
+            try check(store.createTask(title: "合集事项"), "创建独立待办")
+            let id = store.library.tasks[0].id
+            store.filter = .task(id)
+            try check(!store.sendFromMainComposer(text: "  ", taskID: nil, newTaskTitle: nil, drafts: []), "空 Enter 不生成空气泡")
+            try check(store.sendFromMainComposer(text: "第一条", taskID: nil, newTaskTitle: nil, drafts: []), "继承当前事项")
+            try check(store.sendFromMainComposer(text: "第二条", taskID: nil, newTaskTitle: nil, drafts: []), "连续发送继续继承")
+            try check(store.library.messages.allSatisfy { $0.taskID == id } && store.library.tasks.count == 1, "复用一个待办")
+            store.toggleTask(id)
+            try check(store.library.isComplete(id), "完成整项")
+            try check(store.sendFromMainComposer(text: "补充材料", taskID: nil, newTaskTitle: nil, drafts: [DraftAttachment(name: "memo.txt", sourceURL: nil, data: Data("text".utf8), isImage: false)]), "附件消息也继承")
+            try check(!store.library.isComplete(id) && store.library.progress(for: id).total == 3, "新消息重新打开完成事项")
+            try check(store.send(text: "悬浮记事", taskID: nil, newTaskTitle: nil, drafts: []), "悬浮发送保持独立")
+            try check(store.library.messages.last?.taskID == nil, "悬浮记事不继承合集")
+            try check(store.sendFromMainComposer(text: "指定其他事项", taskID: nil, newTaskTitle: "另一个事项", drafts: []), "明确关联优先于默认继承")
+            try check(store.library.messages.last?.taskID != id && store.library.tasks.count == 2, "一条消息仅关联指定事项")
+            store.filter = .all
+            try check(store.sendFromMainComposer(text: "退出后的普通记录", taskID: nil, newTaskTitle: nil, drafts: []), "退出后普通发送")
+            try check(store.library.messages.last?.taskID == nil, "退出停止自动关联")
+            store.filter = .tag("阅读")
+            try check(store.sendFromMainComposer(text: "标签继承", taskID: nil, newTaskTitle: nil, drafts: []), "保留标签合集行为")
+            try check(store.library.messages.last?.tags == ["阅读"], "标签仍可继承")
+            let restored = LedgerStore(restore: false); try restored.openFolder(folder)
+            try check(restored.library.messages.map(\.taskID) == store.library.messages.map(\.taskID), "关联持久化")
+        }
     }
 
     static func presentationAndSearch() throws {

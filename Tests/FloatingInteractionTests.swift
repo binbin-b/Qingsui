@@ -35,6 +35,15 @@ struct FloatingInteractionTests {
             let regions = SidebarRegions(height: height, tagCount: 30)
             precondition(regions.tasks + regions.tags + regions.calendar + 98 <= height, "左栏布局必须有界")
         }
+        let mainWindow = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1120, height: 800), styleMask: [.titled], backing: .buffered, defer: false)
+        for width in [320.0, 1120, 240, 800] {
+            mainWindow.setContentSize(NSSize(width: width, height: 600))
+            mainWindow.level = .floating
+            mainWindow.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+            WindowMode.apply(mainWindow)
+            precondition(mainWindow.level == .normal && mainWindow.collectionBehavior == [.managed], "主窗口在宽屏与窄条模式均不能置顶")
+        }
+        print("PASS: normal window stacking across compact and expanded modes")
         let toggle = FloatingToggleControl(frame: NSRect(x: 0, y: 0, width: 72, height: 24))
         precondition(toggle.focusRingType == .none && !toggle.acceptsFirstResponder, "Toolbar toggle must not retain a blue focus rectangle")
         var toggled = 0

@@ -47,15 +47,34 @@ extension View { func appAppearance() -> some View { modifier(AppAppearance()) }
 struct SettingsPanel: View {
     @ObservedObject private var shortcuts = KeyboardShortcuts.shared
     @AppStorage("interfaceTheme") private var theme = InterfaceTheme.liquidGlass
+    @AppStorage("floatingOrbStyle") private var orbStyle = OrbStyle.logo
     @AppStorage("displayMode") private var mode = DisplayMode.day
     var body: some View {
         Form {
             Section("主题") {
                 Picker("界面风格", selection: $theme) { ForEach(InterfaceTheme.allCases) { Text($0.title).tag($0) } }
+                Text("悬浮球样式").font(.caption).foregroundStyle(.secondary)
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                    ForEach(OrbStyle.allCases) { style in
+                        Button { orbStyle = style } label: {
+                            HStack(spacing: 7) {
+                                OrbArtwork(style: style, diameter: 32)
+                                Text(style.title).font(.system(size: 11)).lineLimit(1)
+                                Spacer(minLength: 0)
+                                if orbStyle == style { Image(systemName: "checkmark").font(.caption).foregroundStyle(Palette.accent) }
+                            }.padding(7).frame(maxWidth: .infinity, minHeight: 44)
+                                .background(orbStyle == style ? Palette.accent.opacity(0.12) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(orbStyle == style ? Palette.accent.opacity(0.5) : Palette.glassEdge, lineWidth: 1))
+                        }.buttonStyle(.plain).focusEffectDisabled()
+                            .accessibilityLabel("悬浮球样式：" + style.title)
+                            .accessibilityValue(orbStyle == style ? "已选择" : "未选择")
+                    }
+                }
             }
             Section("模式") {
                 Picker("明暗", selection: $mode) { ForEach(DisplayMode.allCases) { Text($0.title).tag($0) } }.pickerStyle(.segmented)
             }
+            CopyFeedbackSettings()
             Section("键盘快捷键") {
                 Text("在轻随处于前台时生效。点击组合键后按新快捷键，Esc 取消。").font(.caption).foregroundStyle(.secondary)
                 ForEach(ShortcutAction.allCases) { action in
